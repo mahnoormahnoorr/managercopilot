@@ -320,6 +320,10 @@ const seed = {
   references:[]
 };
 render(seed);
+  <script>
+fetch("./data/latest.json").then(r=>r.json()).then(render).catch(()=>{/* fallback keeps page usable */});
+</script>
+
 </script>
 </body>
 </html>
