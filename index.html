@@ -1,0 +1,325 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Onboarding Checklist Copilot</title>
+<style>
+  :root{--purple:#7c3aed;--purple-2:#a78bfa;--ink:#111827;--muted:#6b7280;--line:#e5e7eb;--bg:#fafafc}
+  *{box-sizing:border-box}
+  body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,sans-serif;margin:0;background:var(--bg);color:var(--ink)}
+  header{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--line);background:#fff;position:sticky;top:0}
+  header h1{font-size:16px;margin:0;font-weight:700;letter-spacing:.2px}
+  .container{max-width:980px;margin:24px auto;padding:0 16px}
+  .card{background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:0 8px 24px rgba(17,24,39,.04)}
+  .section{padding:16px 18px}
+  .row{display:flex;gap:12px;flex-wrap:wrap}
+  label{font-size:12px;color:var(--muted);display:block;margin-bottom:6px}
+  select,input[type="text"],textarea{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#fff}
+  .btn{appearance:none;border:1px solid var(--line);background:#fff;padding:10px 14px;border-radius:10px;cursor:pointer}
+  .btn.primary{background:var(--purple);color:#fff;border-color:var(--purple)}
+  .btn.ghost{background:#fff}
+  .btn-group{display:flex;gap:8px;flex-wrap:wrap}
+  .meta{color:var(--muted);font-size:13px}
+  .divider{height:1px;background:var(--line);margin:8px 0}
+  /* Progress */
+  .bar{height:10px;background:#eee;border-radius:999px;overflow:hidden}
+  .bar>div{height:100%;width:0;background:var(--purple);transition:width .25s ease}
+  /* Checklist */
+  .item{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--line)}
+  .item:last-child{border-bottom:0}
+  .item label{margin:0;cursor:pointer;display:inline}
+  .item .title{font-weight:600}
+  .item .muted{color:var(--muted);font-size:13px}
+  .done .title{color:#6b7280;text-decoration:line-through}
+  .pill{display:inline-block;padding:.1rem .5rem;border-radius:999px;border:1px solid var(--line);font-size:12px;margin-left:.4rem}
+  /* Celebration */
+  .cele{display:none;margin-top:14px}
+  .cele .banner{background:linear-gradient(90deg,var(--purple),var(--purple-2));color:#fff;padding:14px 16px;border-radius:14px;
+                box-shadow:0 8px 24px rgba(124,58,237,.25);font-weight:700;text-align:center}
+  .cele .sub{color:var(--muted);text-align:center;margin-top:6px}
+  .confetti{position:relative;height:0}
+  .confetti span{position:absolute;top:-8vh;font-size:22px;user-select:none;animation:fall 2.8s linear infinite}
+  @keyframes fall{0%{transform:translateY(0) rotate(0);opacity:0}10%{opacity:1}100%{transform:translateY(36vh) rotate(360deg);opacity:0}}
+  /* References */
+  .refs a{color:var(--purple);text-decoration:none}
+</style>
+</head>
+<body>
+<header class="card">
+  <h1>Onboarding Checklist Copilot</h1>
+  <div class="btn-group">
+    <button class="btn" id="btnPaste">Paste JSON</button>
+    <button class="btn ghost" id="btnExport">Export JSON</button>
+  </div>
+</header>
+
+<main class="container">
+  <!-- Controls -->
+  <section class="card section" id="controls">
+    <div class="row">
+      <div style="flex:1 1 180px">
+        <label for="role">Role</label>
+        <select id="role">
+          <option value="it">IT</option>
+          <option value="hr">HR</option>
+          <option value="finance">Finance</option>
+        </select>
+      </div>
+      <div style="flex:1 1 180px">
+        <label for="level">Level</label>
+        <select id="level">
+          <option value="junior">Junior</option>
+          <option value="specialist">Specialist</option>
+          <option value="senior">Senior</option>
+        </select>
+      </div>
+      <div style="flex:1 1 180px">
+        <label for="hire">Hire Type</label>
+        <select id="hire">
+          <option value="external">External</option>
+          <option value="internal">Internal</option>
+        </select>
+      </div>
+      <div style="flex:3 1 320px">
+        <label for="task">Task</label>
+        <input id="task" type="text" placeholder="Onboard a new employee in the Espoo office (30 days)" />
+      </div>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <button class="btn primary" id="btnGenerate">Generate Checklist</button>
+      <span class="meta">Tip: “Generate” calls your backend endpoint if set; otherwise use “Paste JSON”.</span>
+    </div>
+  </section>
+
+  <!-- Output -->
+  <section class="card section" id="output" aria-live="polite">
+    <h2 id="title" style="margin:0 0 6px 0"></h2>
+    <div id="overview" class="meta"></div>
+
+    <div style="margin:12px 0">
+      <div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100"><div id="barFill"></div></div>
+      <div class="meta" id="progressText" style="margin-top:6px"></div>
+    </div>
+
+    <div id="list"></div>
+
+    <div class="cele" id="cele">
+      <div class="banner">🎉 Congratulations! Everything is done. You crushed it. 🎉</div>
+      <div class="sub">+1000 purple points 💜</div>
+      <div class="confetti">
+        <span style="left:2%; animation-delay:0s">💜</span>
+        <span style="left:10%; animation-delay:.15s">✨</span>
+        <span style="left:18%; animation-delay:.35s">🎊</span>
+        <span style="left:26%; animation-delay:.05s">💫</span>
+        <span style="left:34%; animation-delay:.25s">🎉</span>
+        <span style="left:42%; animation-delay:.45s">💜</span>
+        <span style="left:50%; animation-delay:.1s">✨</span>
+        <span style="left:58%; animation-delay:.3s">🎊</span>
+        <span style="left:66%; animation-delay:.2s">💫</span>
+        <span style="left:74%; animation-delay:.4s">🎉</span>
+        <span style="left:82%; animation-delay:.12s">💜</span>
+        <span style="left:90%; animation-delay:.28s">✨</span>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+    <div class="refs" id="refs"></div>
+  </section>
+</main>
+
+<script>
+/* =========================
+   Quick setup
+   ========================= */
+// If you have a backend that returns ManagerChecklist JSON,
+// set it here, e.g. const BACKEND_URL = "/api/generate";
+const BACKEND_URL = null; // keep null if you will paste JSON from the notebook
+
+let data = null;   // holds the ManagerChecklist JSON
+let state = {};    // holds per-item status overrides (localStorage)
+
+/* =========================
+   UI helpers
+   ========================= */
+const $ = (id)=>document.getElementById(id);
+
+function lsKey(d){
+  if(!d) return "checklist";
+  const t=(d.title||"checklist").toLowerCase().replace(/[^a-z0-9_-]+/g,'-').slice(0,50);
+  return `chk:${t}:${d.role||'role'}:${d.level||'level'}:${d.hire_type||'hire'}`;
+}
+function loadState(d){
+  try{ return JSON.parse(localStorage.getItem(lsKey(d))) || {}; }catch(e){ return {}; }
+}
+function saveState(d){
+  if(!d) return;
+  localStorage.setItem(lsKey(d), JSON.stringify(state));
+}
+function percent(n,d){ return d? Math.round((n/d)*100):0; }
+
+/* =========================
+   Rendering
+   ========================= */
+function render(d){
+  data = d;
+  state = loadState(d);
+
+  // Header
+  $("title").textContent = d.title || "Checklist";
+  document.title = d.title ? `${d.title} – Onboarding Checklist` : "Onboarding Checklist";
+  $("overview").textContent = d.overview || "";
+
+  // List
+  const list = $("list");
+  list.innerHTML = "";
+  let done = 0;
+
+  (d.checklist || []).forEach(item=>{
+    const checked = (state[item.id]?.status || item.status) === "done";
+    if(checked) done++;
+
+    const row = document.createElement("div");
+    row.className = "item" + (checked ? " done" : "");
+    const cb = document.createElement("input");
+    cb.type = "checkbox";
+    cb.checked = checked;
+    cb.setAttribute("aria-label", item.text);
+
+    cb.addEventListener("change", ()=>{
+      const isDone = cb.checked;
+      state[item.id] = state[item.id] || {};
+      state[item.id].status = isDone ? "done" : "open";
+      row.classList.toggle("done", isDone);
+      updateProgress();
+      saveState(data);
+    });
+
+    const body = document.createElement("div");
+    const title = document.createElement("div");
+    title.className = "title";
+    title.textContent = item.text;
+
+    const meta = document.createElement("div");
+    meta.className = "muted";
+    meta.innerHTML = `Owner: <b>${item.owner}</b> <span class="pill">Due: ${item.due}</span>`;
+
+    body.appendChild(title);
+    body.appendChild(meta);
+    row.appendChild(cb);
+    row.appendChild(body);
+    list.appendChild(row);
+  });
+
+  // Progress
+  function showCelebration(show){
+    $("cele").style.display = show ? "block" : "none";
+  }
+  function setBar(doneCount,total){
+    const pct = percent(doneCount,total);
+    $("barFill").style.width = pct + "%";
+    $("barFill").parentElement.setAttribute("aria-valuenow", pct);
+    $("progressText").textContent = `${doneCount}/${total} complete (${pct}%)`;
+    showCelebration(total>0 && doneCount===total);
+  }
+  window.updateProgress = function(){
+    let d2 = 0;
+    (d.checklist || []).forEach(it=>{
+      if((state[it.id]?.status || it.status) === "done") d2++;
+    });
+    setBar(d2, (d.checklist||[]).length);
+  }
+  setBar(done, (d.checklist||[]).length);
+
+  // References
+  const refs = $("refs");
+  refs.innerHTML = "";
+  if (d.references && d.references.length){
+    const h = document.createElement("div");
+    h.className="meta";
+    h.style.marginBottom = "6px";
+    h.textContent = "References";
+    refs.appendChild(h);
+    d.references.forEach(u=>{
+      const a = document.createElement("a");
+      a.href = u; a.target="_blank"; a.rel="noopener";
+      a.textContent = u;
+      const r = document.createElement("div");
+      r.appendChild(a);
+      refs.appendChild(r);
+    });
+  }
+}
+
+/* =========================
+   Actions
+   ========================= */
+async function handleGenerate(){
+  if(!BACKEND_URL){
+    alert("No backend configured. Click ‘Paste JSON’ and paste the checklist JSON from your notebook.");
+    return;
+  }
+  const payload = {
+    role: $("role").value,
+    level: $("level").value,
+    hire_type: $("hire").value,
+    task: $("task").value
+  };
+  const resp = await fetch(BACKEND_URL, {
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body: JSON.stringify(payload)
+  });
+  if(!resp.ok){ alert("Backend error: " + resp.statusText); return; }
+  const json = await resp.json();
+  render(json);
+}
+function handlePaste(){
+  const txt = prompt("Paste the checklist JSON here:");
+  if(!txt) return;
+  try{
+    const json = JSON.parse(txt);
+    render(json);
+  }catch(e){
+    alert("That wasn’t valid JSON. Try again.");
+  }
+}
+function handleExport(){
+  if(!data){ alert("Nothing to export yet."); return; }
+  // Merge current checkbox state back into data before exporting
+  const merged = structuredClone(data);
+  merged.checklist = (data.checklist||[]).map(it => ({
+    ...it,
+    status: (state[it.id]?.status || it.status)
+  }));
+  const blob = new Blob([JSON.stringify(merged,null,2)], {type:"application/json"});
+  const a = document.createElement("a");
+  const safe = (data.title||"checklist").toLowerCase().replace(/[^a-z0-9_-]+/g,'-').slice(0,50);
+  a.href = URL.createObjectURL(blob);
+  a.download = safe + ".json";
+  a.click();
+}
+
+/* =========================
+   Wire up
+   ========================= */
+$("btnGenerate").addEventListener("click", handleGenerate);
+$("btnPaste").addEventListener("click", handlePaste);
+$("btnExport").addEventListener("click", handleExport);
+
+// Optional: seed with a tiny example (remove if you prefer a blank slate)
+const seed = {
+  role:"hr", level:"junior", hire_type:"external",
+  title:"Onboarding Checklist – HR (Espoo, 30 days)",
+  overview:"A role-aware onboarding plan grounded in internal policy.",
+  checklist:[
+    {id:1,text:"Send welcome email with onboarding schedule",owner:"HR",due:"Day 1",status:"open"},
+    {id:2,text:"Collect signed documents & verify identity",owner:"HR",due:"Day 1",status:"open"},
+    {id:3,text:"Schedule policy orientation session",owner:"HR",due:"Week 1",status:"open"}
+  ],
+  references:[]
+};
+render(seed);
+</script>
+</body>
+</html>
