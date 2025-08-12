@@ -1,0 +1,22 @@
+name: Build checklist JSON
+on:
+  workflow_dispatch:
+  schedule: [{cron: "0 6 * * 1"}]  # Mondays 06:00 UTC
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - run: pip install -r requirements.txt
+      - env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: python scripts/generate_checklist.py
+      - name: Commit JSON
+        run: |
+          git config user.name "gh-actions"
+          git config user.email "actions@github.com"
+          git add docs/data/latest.json
+          git commit -m "Update checklist JSON" || echo "No changes"
+          git push
